@@ -1,0 +1,45 @@
+name: Step 1 - Create a Branch
+on:
+  workflow_dispatch: {}
+  create: {}
+
+permissions:
+  contents: write
+
+jobs:
+  get_current_step:
+    name: Check Current Step Number
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get Current Step
+        id: get_step
+        run: |
+          echo "current_step=$(cat ./.github/steps/-step.txt)" >> $GITHUB_ENV
+        outputs:
+          current_step: ${{ steps.get_step.outputs.current_step }}
+
+  on_create_a_branch:
+    name: On Create a Branch
+    needs: get_current_step
+    if: >
+      ${{ !github.event.repository.is_template &&
+      needs.get_current_step.outputs.current_step == '1' &&
+      github.ref_type == 'branch' &&
+      github.ref_name == 'my-first-branch' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Update Step
+        uses: skills/action-update-step@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          from_step: 1
+          to_step: 2
+          branch_name: my-first-branch
